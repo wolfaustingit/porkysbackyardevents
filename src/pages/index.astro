@@ -1,0 +1,212 @@
+---
+import "@fontsource/chewy";
+import "@fontsource-variable/inter";
+import "../styles/tokens.css";
+import "../styles/site.css";
+
+import { calendarUrl, normalise, windowFrom, type PorkyEvent } from "../lib/events";
+import { listHTML, monthHTML, nextUp, nextUpHTML } from "../lib/render";
+import { sampleEvents } from "../data/sample";
+
+const VENUE = {
+  name: "Porky's Backyard",
+  phone: "(281) 761-6844",
+  phoneHref: "tel:+12817616844",
+  address: "5131 Atascocita Road, Humble, TX 77346",
+  mainSite: "https://porkysbackyard.com",
+};
+
+const now = new Date();
+
+/*
+ * Build-time fetch. This bakes the current schedule into the HTML so the page
+ * paints a real answer with no JavaScript at all; the client script then
+ * refreshes it against /api/events. If the calendar is not configured yet the
+ * page falls back to placeholder data and says so on screen.
+ */
+const calendarId = import.meta.env.GOOGLE_CALENDAR_ID;
+const apiKey = import.meta.env.GOOGLE_CALENDAR_API_KEY;
+
+let events: PorkyEvent[] = [];
+let isSample = false;
+
+if (calendarId && apiKey) {
+  try {
+    const res = await fetch(calendarUrl(calendarId, apiKey, windowFrom(now)));
+    if (res.ok) {
+      const body = (await res.json()) as { items?: unknown[] };
+      events = normalise((body.items ?? []) as never[]);
+    } else {
+      // Fail the build loudly rather than shipping an empty calendar that
+      // looks like "no events scheduled".
+      throw new Error(`Calendar API returned ${res.status}`);
+    }
+  } catch (err) {
+    throw new Error(
+      `Could not read the Google Calendar at build time: ${(err as Error).message}`,
+    );
+  }
+} else {
+  events = sampleEvents(now);
+  isSample = true;
+}
+
+const upcoming = nextUp(events, now);
+const listMarkup = listHTML(events, now);
+const monthMarkup = monthHTML(events, now, now);
+const heroMarkup = nextUpHTML(upcoming, now);
+
+const title = `What's on at ${VENUE.name} — events calendar`;
+const description = `Live schedule of live music, bingo, truck takeovers and sim racing nights at ${VENUE.name}, ${VENUE.address}.`;
+
+/*
+ * Both JSON blocks below are emitted raw into <script> elements, where the
+ * parser is looking for a literal `</script>` and does not care that it sits
+ * inside a JSON string. An event someone titled "</script>" would end the
+ * block and put the rest of the feed into the document as markup. Escaping
+ * `<` closes that off; JSON.parse reads < straight back as "<".
+ */
+const safeJson = (value: unknown): string =>
+  JSON.stringify(value).replace(/</g, "\\u003c");
+
+/* Search engines get the real schedule, not just the page. */
+const jsonLd = events.slice(0, 20).map((e) => ({
+  "@context": "https://schema.org",
+  "@type": "Event",
+  name: e.title,
+  startDate: e.start,
+  endDate: e.end,
+  description: e.description || undefined,
+  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+  location: {
+    "@type": "Place",
+    name: VENUE.name,
+    address: VENUE.address,
+  },
+}));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href="https://porkysbackyardevents.com/" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://porkysbackyardevents.com/" />
+    <meta name="theme-color" content="#ff1e02" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {!isSample && (
+      <script
+        type="application/ld+json"
+        is:inline
+        set:html={safeJson(jsonLd)}
+      />
+    )}
+  </head>
+
+  <body>
+    <a class="skip" href="#schedule">Skip to the schedule</a>
+
+    <header class="topbar">
+      <a class="brand" href={VENUE.mainSite}>
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span class="brand-name">Porky's Backyard</span>
+      </a>
+      <nav class="topnav" aria-label="Main site">
+        <a href={VENUE.phoneHref}>{VENUE.phone}</a>
+        <a class="btn btn-red btn-sm" href={VENUE.mainSite}>Main site</a>
+      </nav>
+    </header>
+
+    {isSample && (
+      <p class="sample-notice" role="status">
+        <strong>Placeholder schedule.</strong> No Google Calendar is connected yet,
+        so these events are examples, not real bookings.
+      </p>
+    )}
+
+    <!--
+      The hero leads with the answer, not a headline. Someone opening this at
+      5pm on a Friday wants one fact: is anything on tonight.
+    -->
+    <section class="hero" aria-labelledby="hero-title">
+      <h1 id="hero-title" class="hero-kicker">What's happening in the backyard</h1>
+      <div class="nextup" id="nextup" set:html={heroMarkup} />
+    </section>
+
+    <main id="schedule">
+      <div class="views" role="tablist" aria-label="Calendar view">
+        <button
+          class="view-btn is-on"
+          id="tab-list"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-list"
+        >
+          Upcoming
+        </button>
+        <button
+          class="view-btn"
+          id="tab-month"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-month"
+        >
+          Month
+        </button>
+      </div>
+
+      <div
+        class="panel"
+        id="panel-list"
+        role="tabpanel"
+        aria-labelledby="tab-list"
+        set:html={listMarkup}
+      />
+
+      <div
+        class="panel is-hidden"
+        id="panel-month"
+        role="tabpanel"
+        aria-labelledby="tab-month"
+        hidden
+        set:html={monthMarkup}
+      />
+
+      <p class="freshness" id="freshness" aria-live="polite"></p>
+
+      <!--
+        The same schedule the views above were rendered from, so paging the
+        month grid works before the first live fetch returns — and anywhere
+        /api/events is not deployed.
+      -->
+      <script
+        type="application/json"
+        is:inline
+        id="seed-events"
+        set:html={safeJson(events)}
+      />
+    </main>
+
+    <footer class="foot">
+      <p class="foot-name">Porky's Backyard</p>
+      <p><a href={`https://maps.google.com/?q=${encodeURIComponent(VENUE.address)}`}>{VENUE.address}</a></p>
+      <p><a href={VENUE.phoneHref}>{VENUE.phone}</a></p>
+      <p class="foot-links">
+        <a href={VENUE.mainSite}>Food trucks</a>
+        <a href={`${VENUE.mainSite}/drink-menu`}>Drink menu</a>
+        <a href={VENUE.mainSite}>Book a table</a>
+      </p>
+    </footer>
+
+    <script>
+      import { initLive } from "../scripts/live";
+      initLive();
+    </script>
+  </body>
+</html>

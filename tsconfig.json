@@ -1,0 +1,6 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "//": "functions/ runs on workerd, not in a browser. Its Cloudflare types collide with the DOM lib this config pulls in, so it gets its own tsconfig.",
+  "exclude": ["dist", "functions"]
+}

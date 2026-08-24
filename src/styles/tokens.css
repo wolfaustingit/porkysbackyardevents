@@ -1,0 +1,106 @@
+/*
+ * Design tokens.
+ *
+ * These are not invented. Every colour below was read out of the live
+ * porkysbackyard.com stylesheet (Toast's `--ds-*` custom properties) on
+ * 2026-08-24, so this site and the main site stay in step. The Toast names are
+ * kept in comments so a future palette change can be traced back to source.
+ *
+ * Nothing in this repo may hardcode a colour or a font size. Add a token.
+ */
+
+:root {
+  /* ---- Brand -------------------------------------------------------- */
+  --red: #ff1e02;              /* --ds-background-primary */
+  --red-focus: #f00000;        /* --ds-background-primary-focus */
+  --red-tint: #ffeae5;         /* --ds-background-primary-subtle */
+  --red-tint-focus: #ffd9cf;   /* --ds-background-primary-subtle-focus */
+  --red-ink: #ec0801;          /* --ds-text-action — the accessible red for text */
+
+  /* Toast defines a cyan secondary and the main site barely uses it. It earns
+     its keep here: the grid view needs a non-red highlight for "today" that
+     does not read as an event. */
+  --cyan: #28eaff;             /* --ds-background-secondary */
+  --cyan-tint: #d9f9ff;        /* --ds-background-secondary-subtle */
+
+  /* ---- Surfaces ----------------------------------------------------- */
+  --cream: #fff8f6;            /* --ds-surface-default — the page ground */
+  --cream-soft: #fffcfb;       /* --ds-surface-secondary */
+  --white: #ffffff;            /* --ds-surface-tertiary */
+  --ink: #202020;              /* --ds-surface-inverse / --ds-text-default */
+
+  /* ---- Text --------------------------------------------------------- */
+  --text: #202020;             /* --ds-text-default */
+  --text-soft: #646464;        /* --ds-text-secondary */
+  --text-on-red: #ffffff;      /* --ds-text-on-bg-primary */
+
+  /* ---- Lines -------------------------------------------------------- */
+  --rule: #cecece;             /* --ds-border-default */
+  --rule-warm: #574d4d;        /* the inline rule on the main site's event rows */
+  --shadow: #00000044;         /* --ds-surface-shadow */
+
+  /* ---- Type --------------------------------------------------------- */
+  /* Chewy carries every heading on the main site, buttons included. Inter
+     replaces Effra, which is licensed and not ours to serve. */
+  --font-display: "Chewy", "Chewy Fallback", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+
+  /* A fixed scale, matched to the main site's 40 / 32 / 16 / 12 and extended
+     at both ends so this page can breathe. Do not introduce sizes between
+     these — pick the nearest step. */
+  --t-12: 0.75rem;
+  --t-14: 0.875rem;
+  --t-16: 1rem;
+  --t-20: 1.25rem;
+  --t-24: 1.5rem;
+  --t-32: 2rem;
+  --t-40: 2.5rem;
+  --t-56: 3.5rem;
+  --t-72: 4.5rem;
+
+  /* ---- Space -------------------------------------------------------- */
+  --s-4: 0.25rem;
+  --s-8: 0.5rem;
+  --s-12: 0.75rem;
+  --s-16: 1rem;
+  --s-24: 1.5rem;
+  --s-30: 1.875rem;  /* the main site's event-row bottom padding */
+  --s-40: 2.5rem;
+  --s-64: 4rem;
+  --s-96: 6rem;
+
+  /* ---- Shape -------------------------------------------------------- */
+  --r-card: 18px;
+  --r-hero: 24px;
+  --r-pill: 99px;    /* the main site's button radius, exactly */
+
+  --page-max: 68rem;
+}
+
+/*
+ * Metric-matched fallback for Chewy.
+ *
+ * Webfonts cost this owner's sites Lighthouse points through CLS, not LCP — a
+ * heading that re-wraps when the display face arrives is the whole problem.
+ * Chewy is wide and short-descended; Arial size-adjusted to 108% lands close
+ * enough that headings hold their line count through the swap.
+ */
+@font-face {
+  font-family: "Chewy Fallback";
+  src: local("Arial"), local("Helvetica");
+  size-adjust: 108%;
+  ascent-override: 88%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

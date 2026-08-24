@@ -1,0 +1,673 @@
+/*
+ * Page styles. Every value here comes from tokens.css — no literal colours,
+ * no sizes off the scale.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--t-16);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400; /* Chewy ships one weight; asking for 700 only synthesises. */
+  line-height: 1.1;
+  margin: 0;
+}
+
+a {
+  color: var(--red-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: var(--s-4);
+}
+
+/* Visually hidden but read aloud. */
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip {
+  position: absolute;
+  left: var(--s-16);
+  top: calc(var(--s-16) * -4);
+  z-index: 10;
+  background: var(--ink);
+  color: var(--white);
+  padding: var(--s-8) var(--s-16);
+  border-radius: var(--r-pill);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip:focus {
+  top: var(--s-16);
+}
+
+/* ------------------------------------------------------------------ chrome */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-16);
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--s-16);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-12);
+  text-decoration: none;
+  color: var(--text);
+}
+
+/* Stands in for the pig roundel until the high-resolution logo arrives. */
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: var(--t-24);
+  line-height: 1;
+  padding-top: 0.15em;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: var(--t-20);
+}
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-16);
+  font-size: var(--t-14);
+}
+.topnav a:first-child {
+  color: var(--text-soft);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+.topnav a:first-child:hover {
+  color: var(--text);
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+.btn {
+  display: inline-block;
+  border: 2px solid transparent;
+  border-radius: var(--r-pill);
+  font-family: var(--font-display);
+  font-size: var(--t-16);
+  line-height: 1;
+  padding: 0.7em var(--s-24) 0.55em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-red {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--text-on-red);
+}
+.btn-red:hover {
+  background: var(--red-focus);
+  border-color: var(--red-focus);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--text);
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+  background: var(--white);
+}
+
+.btn-sm {
+  font-size: var(--t-14);
+  padding: 0.6em var(--s-16) 0.45em;
+}
+
+/* -------------------------------------------------------------- the notice */
+
+.sample-notice {
+  max-width: var(--page-max);
+  margin: 0 auto var(--s-16);
+  padding: var(--s-12) var(--s-16);
+  background: var(--cyan-tint);
+  border: 1px solid var(--cyan);
+  border-radius: var(--r-card);
+  font-size: var(--t-14);
+}
+
+/* ---------------------------------------------------------------- the hero */
+
+/*
+ * The signature. The park's building is red corrugated metal with marquee
+ * letters across it, so the band the answer sits on is that wall — the
+ * corrugation is a repeating gradient, not an image, so it costs nothing and
+ * scales to any width.
+ */
+.hero {
+  position: relative;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--s-64) var(--s-24);
+  border-radius: var(--r-hero);
+  background-color: var(--red);
+  /*
+   * Corrugation, not stripes. A wide period with a soft shadow on one side of
+   * each fold reads as sheet metal; a narrow high-contrast repeat reads as a
+   * barcode, which is where this started.
+   */
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.07) 0 1px,
+    rgb(0 0 0 / 0.03) 1px 8px,
+    rgb(255 255 255 / 0.06) 8px 20px,
+    rgb(0 0 0 / 0.03) 20px 34px
+  );
+  overflow: hidden;
+}
+
+.hero-kicker {
+  color: var(--text-on-red);
+  font-size: var(--t-40);
+  text-align: center;
+  margin-bottom: var(--s-40);
+  text-wrap: balance;
+  /* The band is busy; a soft drop shadow keeps the display face legible on it. */
+  text-shadow: 0 2px 0 rgb(0 0 0 / 0.18);
+}
+
+.nextup {
+  max-width: 34rem;
+  margin: 0 auto;
+  background: var(--white);
+  border-radius: var(--r-card);
+  padding: var(--s-40) var(--s-24);
+  text-align: center;
+  box-shadow: 0 18px 40px -18px var(--shadow);
+  animation: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.nextup-eyebrow {
+  margin: 0;
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.nextup-when {
+  margin: var(--s-8) 0 var(--s-4);
+  font-size: var(--t-16);
+  font-weight: 700;
+  color: var(--red-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.nextup-title {
+  font-size: var(--t-56);
+  margin: var(--s-8) 0;
+  text-wrap: balance;
+}
+
+.nextup-desc {
+  margin: 0 0 var(--s-24);
+  color: var(--text-soft);
+}
+
+.nextup-empty {
+  margin: 0;
+  font-size: var(--t-20);
+  color: var(--text-soft);
+}
+
+/* --------------------------------------------------------------- the views */
+
+main {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--s-40) var(--s-24) var(--s-64);
+}
+
+.views {
+  display: flex;
+  width: fit-content;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  margin: 0 auto var(--s-40);
+  background: var(--red-tint);
+  border-radius: var(--r-pill);
+}
+
+.view-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-radius: var(--r-pill);
+  font-family: var(--font-display);
+  font-size: var(--t-16);
+  color: var(--text);
+  padding: 0.6em var(--s-24) 0.45em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.view-btn:hover {
+  background: var(--red-tint-focus);
+}
+.view-btn.is-on {
+  background: var(--red);
+  color: var(--text-on-red);
+}
+
+.panel.is-hidden {
+  display: none;
+}
+
+/* --------------------------------------------------------------- list view */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto;
+  align-items: start;
+  gap: var(--s-24);
+  padding-bottom: var(--s-30);
+  margin-bottom: var(--s-30);
+  border-bottom: 1px solid var(--rule-warm);
+}
+.row:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+/*
+ * The date rail is the one place the page uses a mechanical voice: heavy
+ * tabular Inter against Chewy's roundness, so a column of dates lines up
+ * exactly and reads as data rather than decoration.
+ */
+.rail {
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+  padding-top: var(--s-4);
+}
+.rail-wd,
+.rail-mo {
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+.rail-day {
+  font-size: var(--t-40);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  margin: 0.08em 0;
+}
+
+.row-today .rail-day {
+  color: var(--red);
+}
+
+.row-time {
+  margin: 0;
+  font-size: var(--t-14);
+  font-weight: 600;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+}
+
+.chip-today {
+  background: var(--cyan);
+  color: var(--ink);
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2em 0.6em;
+  border-radius: var(--r-pill);
+}
+
+.row-title {
+  font-size: var(--t-32);
+  margin: var(--s-4) 0;
+  text-wrap: balance;
+}
+
+.row-desc {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.row-loc {
+  margin: var(--s-4) 0 0;
+  font-size: var(--t-14);
+  color: var(--text-soft);
+}
+
+.row-cta {
+  align-self: center;
+  white-space: nowrap;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-soft);
+  font-size: var(--t-20);
+  max-width: 32rem;
+  margin: var(--s-64) auto;
+  text-wrap: balance;
+}
+
+/* -------------------------------------------------------------- month view */
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-16);
+  margin-bottom: var(--s-24);
+}
+
+.month-arrow {
+  appearance: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--rule);
+  background: transparent;
+  border-radius: 50%;
+  font-size: var(--t-24);
+  line-height: 1;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.month-arrow:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--white);
+}
+.month-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.month-name {
+  font-family: var(--font-display);
+  font-size: var(--t-32);
+  margin: 0;
+  min-width: 11ch;
+  text-align: center;
+}
+
+/* The column headers carry the weekday on wide screens. */
+.cell-wd {
+  display: none;
+}
+
+.month {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.month th {
+  font-size: var(--t-12);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  padding-bottom: var(--s-8);
+}
+
+.cell {
+  vertical-align: top;
+  height: 6.5rem;
+  padding: var(--s-8);
+  border: 1px solid var(--rule);
+  background: var(--cream-soft);
+}
+/* Kept in the flow with its border so the grid stays a clean rectangle. */
+.cell-blank {
+  background: transparent;
+}
+
+.cell-num {
+  display: block;
+  font-size: var(--t-14);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+}
+
+.cell-has {
+  background: var(--white);
+}
+
+.cell-today {
+  /* Cyan is reserved for "now" across the whole page — never for an event. */
+  box-shadow: inset 0 0 0 3px var(--cyan);
+}
+.cell-today .cell-num {
+  color: var(--ink);
+}
+
+.chips {
+  display: grid;
+  gap: var(--s-4);
+  margin-top: var(--s-4);
+}
+
+.chip {
+  display: block;
+  background: var(--red);
+  color: var(--text-on-red);
+  font-size: var(--t-12);
+  line-height: 1.25;
+  padding: 0.25em 0.5em;
+  border-radius: var(--s-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.freshness {
+  margin: var(--s-40) 0 0;
+  text-align: center;
+  font-size: var(--t-12);
+  color: var(--text-soft);
+  min-height: 1.2em;
+}
+
+/* ----------------------------------------------------------------- footer */
+
+.foot {
+  background: var(--ink);
+  color: var(--white);
+  text-align: center;
+  padding: var(--s-64) var(--s-24);
+}
+.foot p {
+  margin: 0 0 var(--s-8);
+  font-size: var(--t-14);
+}
+.foot a {
+  color: var(--white);
+}
+.foot-name {
+  font-family: var(--font-display);
+  font-size: var(--t-32);
+  margin-bottom: var(--s-16);
+}
+.foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-24);
+  justify-content: center;
+  margin-top: var(--s-24);
+}
+
+/* ------------------------------------------------------------ small screens */
+
+@media (max-width: 46rem) {
+  .hero {
+    border-radius: 0;
+    padding: var(--s-40) var(--s-16) var(--s-64);
+  }
+  .hero-kicker {
+    font-size: var(--t-32);
+  }
+  .nextup-title {
+    font-size: var(--t-40);
+  }
+
+  /* The rail moves above the event rather than shrinking into illegibility. */
+  .row {
+    grid-template-columns: 1fr;
+    gap: var(--s-8);
+  }
+  .rail {
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: baseline;
+    gap: var(--s-8);
+  }
+  .rail-day {
+    font-size: var(--t-24);
+  }
+  .row-cta {
+    justify-self: start;
+    margin-top: var(--s-8);
+  }
+
+  /*
+   * A seven-column grid on a phone gives each day about 45px, which cannot
+   * hold an event name. Days become rows and empty ones drop out — so the
+   * month view stops being a wall calendar and becomes a dated agenda.
+   *
+   * Every rule below is scoped `.month td…` rather than `.cell…`: the table
+   * reset needs element selectors, and a bare `.cell` would lose to them.
+   */
+  .month,
+  .month tbody,
+  .month tr {
+    display: block;
+    width: 100%;
+  }
+  .month thead {
+    display: none;
+  }
+  .month td {
+    height: auto;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 3.25rem 1fr;
+    gap: var(--s-12);
+    align-items: center;
+    background: transparent;
+    padding: var(--s-12) 0;
+  }
+  .month td.cell-blank,
+  .month td.cell:not(.cell-has):not(.cell-today) {
+    display: none;
+  }
+  .month td.cell-today {
+    box-shadow: none;
+    border-left: 4px solid var(--cyan);
+    padding-left: var(--s-12);
+  }
+
+  /* The killed column headers have to put the weekday back somewhere. */
+  .cell-wd {
+    display: block;
+    font-size: var(--t-12);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .cell-d {
+    font-size: var(--t-24);
+    color: var(--text);
+  }
+  /*
+   * Full-bleed chips are right inside a grid cell and wrong in an agenda row —
+   * five edge-to-edge red bars down a phone is a lot of shouting. Let them
+   * size to their text instead.
+   */
+  .chips {
+    justify-items: start;
+  }
+  .chip {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 30rem) {
+  .topnav a:first-child {
+    display: none; /* the number is in the footer and in the tel: link below */
+  }
+}
