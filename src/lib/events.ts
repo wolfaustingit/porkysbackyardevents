@@ -1,18 +1,19 @@
 /*
- * The event model, and the one place raw Google Calendar payloads become it.
+ * The event model, and the one place raw calendar data becomes it.
  *
- * Both the Cloudflare Function (live, at the edge) and the Astro build (the
- * first paint, baked into HTML) normalise through `normalise()`, so the server
- * render and the client refresh can never disagree about shape.
+ * The build and the Cloudflare Function both normalise through here, so the
+ * server render and the live refresh can never disagree about shape.
  */
 
+import { expandRule, parseICS, type ParseResult, type RawEvent } from "./ics";
+
 export interface PorkyEvent {
-  /** Google's event id — stable across refreshes, used as the render key. */
+  /** Stable across refreshes — UID plus occurrence, so recurring nights differ. */
   id: string;
   title: string;
   /** Description with any trailing link stripped out; may be empty. */
   description: string;
-  /** ISO 8601. All-day events carry a date only; see `allDay`. */
+  /** ISO 8601 instant. */
   start: string;
   end: string;
   allDay: boolean;
@@ -21,25 +22,40 @@ export interface PorkyEvent {
   link: string | null;
 }
 
-/** The shape Google returns from calendar/v3/events. Only what we read. */
-interface GoogleEvent {
-  id?: string;
-  status?: string;
-  summary?: string;
-  description?: string;
-  location?: string;
-  htmlLink?: string;
-  start?: { dateTime?: string; date?: string };
-  end?: { dateTime?: string; date?: string };
+/** The park is in Humble, TX. Every date on this site is rendered in its time. */
+export const VENUE_TZ = "America/Chicago";
+
+/** How far forward the site looks. A season of events, not an archive. */
+export const WINDOW_DAYS = 120;
+
+/** How far back — so an event still running today does not vanish at 12:01am. */
+export const LOOKBACK_HOURS = 12;
+
+export function windowFrom(now: Date): { from: number; to: number } {
+  return {
+    from: now.getTime() - LOOKBACK_HOURS * 3600_000,
+    to: now.getTime() + WINDOW_DAYS * 86400_000,
+  };
+}
+
+/**
+ * The public ICS feed.
+ *
+ * No API key, no Google Cloud project, no quota — the calendar just has to be
+ * public. The cost is that recurrence expansion is ours to do; see ics.ts.
+ */
+export function icsUrl(calendarId: string): string {
+  return `https://calendar.google.com/calendar/ical/${encodeURIComponent(
+    calendarId,
+  )}/public/basic.ics`;
 }
 
 const URL_RE = /https?:\/\/[^\s<>"')]+/i;
 
 /**
- * Google lets people paste rich text into descriptions, so they arrive as
- * HTML about half the time. Strip tags and entities rather than rendering
- * them — this text goes into the page and the calendar is not a trusted
- * authoring surface just because we own it.
+ * Descriptions arrive as HTML about half the time, because Google lets people
+ * paste rich text in. Strip tags rather than rendering them — we own the
+ * calendar, but it is still an authoring surface, not trusted markup.
  */
 function toPlainText(html: string): string {
   return html
@@ -56,77 +72,81 @@ function toPlainText(html: string): string {
     .trim();
 }
 
-function normaliseOne(raw: GoogleEvent): PorkyEvent | null {
-  const start = raw.start?.dateTime ?? raw.start?.date;
-  if (!raw.id || !start) return null;
-
-  const allDay = !raw.start?.dateTime;
-  const end = raw.end?.dateTime ?? raw.end?.date ?? start;
-
-  const text = toPlainText(raw.description ?? "");
+function build(raw: RawEvent, startMs: number): PorkyEvent {
+  const text = toPlainText(raw.description);
   const link = text.match(URL_RE)?.[0] ?? null;
-  // Pull the bare URL out of the prose so the row does not print the link
-  // twice — once as text and once as the button.
+  // Pull the bare URL out of the prose so the row does not print it twice —
+  // once as text and once as the button.
   const description = link ? text.replace(link, "").trim() : text;
 
   return {
-    id: raw.id,
-    title: (raw.summary ?? "Untitled event").trim(),
+    id: `${raw.uid}|${startMs}`,
+    title: raw.summary || "Untitled event",
     description,
-    start,
-    end,
-    allDay,
-    location: (raw.location ?? "").trim(),
+    start: new Date(startMs).toISOString(),
+    end: new Date(startMs + raw.duration).toISOString(),
+    allDay: raw.allDay,
+    location: raw.location,
     link,
   };
 }
 
-export function normalise(items: GoogleEvent[]): PorkyEvent[] {
-  return items
-    .filter((e) => e.status !== "cancelled")
-    .map(normaliseOne)
-    .filter((e): e is PorkyEvent => e !== null)
-    .sort((a, b) => a.start.localeCompare(b.start));
+export interface FeedResult {
+  events: PorkyEvent[];
+  /** Recurrence rules this parser could not fully expand. Surface, don't hide. */
+  unsupported: ParseResult["unsupported"];
 }
 
 /**
- * Build the Calendar API request.
- *
- * `singleEvents` is the important one: it expands RRULEs server-side, so a
- * weekly trivia night arrives as N dated events instead of one recurrence rule
- * this codebase would have to expand itself. Do not remove it.
+ * ICS text → the events falling inside the window, recurrences expanded and
+ * single-instance edits applied.
  */
-export function calendarUrl(
-  calendarId: string,
-  apiKey: string,
-  opts: { timeMin: string; timeMax: string; max?: number },
-): string {
-  const url = new URL(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-      calendarId,
-    )}/events`,
-  );
-  url.searchParams.set("key", apiKey);
-  url.searchParams.set("singleEvents", "true");
-  url.searchParams.set("orderBy", "startTime");
-  url.searchParams.set("timeMin", opts.timeMin);
-  url.searchParams.set("timeMax", opts.timeMax);
-  url.searchParams.set("maxResults", String(opts.max ?? 250));
-  url.searchParams.set("timeZone", VENUE_TZ);
-  return url.toString();
-}
+export function fromICS(text: string, now: Date): FeedResult {
+  const { events: raw, unsupported } = parseICS(text);
+  const { from, to } = windowFrom(now);
 
-/** The park is in Humble, TX. Every date on this site is rendered in its time. */
-export const VENUE_TZ = "America/Chicago";
+  /*
+   * Google publishes an edited instance of a recurring series as a separate
+   * VEVENT carrying RECURRENCE-ID — same UID, pointing at the occurrence it
+   * replaces. Without this map, "bingo moved to 7pm this one week" would show
+   * twice: once at six and once at seven.
+   */
+  const overrides = new Map<string, RawEvent>();
+  for (const e of raw) {
+    if (e.recurrenceId !== null) {
+      overrides.set(`${e.uid}|${e.recurrenceId}`, e);
+    }
+  }
 
-/** How far forward the site looks. A season of events, not an archive. */
-export const WINDOW_DAYS = 120;
+  const out: PorkyEvent[] = [];
 
-/** How far back — so an event still showing today does not vanish at 12:01am. */
-export const LOOKBACK_HOURS = 12;
+  for (const base of raw) {
+    if (base.recurrenceId !== null) continue; // handled as an override
+    if (base.status === "CANCELLED") continue;
 
-export function windowFrom(now: Date): { timeMin: string; timeMax: string } {
-  const min = new Date(now.getTime() - LOOKBACK_HOURS * 3600_000);
-  const max = new Date(now.getTime() + WINDOW_DAYS * 86400_000);
-  return { timeMin: min.toISOString(), timeMax: max.toISOString() };
+    for (const startMs of expandRule(base, VENUE_TZ, from, to)) {
+      const override = overrides.get(`${base.uid}|${startMs}`);
+      if (override) {
+        if (override.status === "CANCELLED") continue;
+        out.push(build(override, override.start));
+      } else {
+        out.push(build(base, startMs));
+      }
+    }
+  }
+
+  // An override can also move an instance *into* the window from outside it,
+  // in which case the loop above never reached it.
+  for (const [key, o] of overrides) {
+    if (o.status === "CANCELLED") continue;
+    if (o.start < from || o.start > to) continue;
+    if (out.some((e) => e.id === `${o.uid}|${o.start}`)) continue;
+    // Only if its series is present at all — a stray override is not an event.
+    if (!raw.some((r) => r.uid === o.uid && r.recurrenceId === null)) continue;
+    void key;
+    out.push(build(o, o.start));
+  }
+
+  out.sort((a, b) => a.start.localeCompare(b.start));
+  return { events: out, unsupported };
 }

@@ -90,19 +90,19 @@ a {
   color: var(--text);
 }
 
-/* Stands in for the pig roundel until the high-resolution logo arrives. */
+/*
+ * The roundel ships as a black square tile with a white keyline, which is how
+ * the brand actually uses it. Rounding the corners slightly lets it sit on the
+ * cream ground without reading as an un-cropped screenshot.
+ *
+ * Width and height are set in the markup as well, so the header cannot shift
+ * while the image decodes.
+ */
 .brand-mark {
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--white);
-  font-family: var(--font-display);
-  font-size: var(--t-24);
-  line-height: 1;
-  padding-top: 0.15em;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--s-8);
+  display: block;
 }
 
 .brand-name {
@@ -166,18 +166,6 @@ a {
 .btn-sm {
   font-size: var(--t-14);
   padding: 0.6em var(--s-16) 0.45em;
-}
-
-/* -------------------------------------------------------------- the notice */
-
-.sample-notice {
-  max-width: var(--page-max);
-  margin: 0 auto var(--s-16);
-  padding: var(--s-12) var(--s-16);
-  background: var(--cyan-tint);
-  border: 1px solid var(--cyan);
-  border-radius: var(--r-card);
-  font-size: var(--t-14);
 }
 
 /* ---------------------------------------------------------------- the hero */

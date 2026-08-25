@@ -4,9 +4,9 @@ import "@fontsource-variable/inter";
 import "../styles/tokens.css";
 import "../styles/site.css";
 
-import { calendarUrl, normalise, windowFrom, type PorkyEvent } from "../lib/events";
+import { fromICS, icsUrl, type PorkyEvent } from "../lib/events";
+import { resolveCalendarId } from "../lib/config";
 import { listHTML, monthHTML, nextUp, nextUpHTML } from "../lib/render";
-import { sampleEvents } from "../data/sample";
 
 const VENUE = {
   name: "Porky's Backyard",
@@ -21,34 +21,33 @@ const now = new Date();
 /*
  * Build-time fetch. This bakes the current schedule into the HTML so the page
  * paints a real answer with no JavaScript at all; the client script then
- * refreshes it against /api/events. If the calendar is not configured yet the
- * page falls back to placeholder data and says so on screen.
+ * refreshes it against /api/events.
+ *
+ * There is deliberately no placeholder fallback. If the feed cannot be read
+ * the build FAILS, which keeps the last good deploy serving instead of
+ * replacing it with an empty page that reads as "nothing scheduled".
  */
-const calendarId = import.meta.env.GOOGLE_CALENDAR_ID;
-const apiKey = import.meta.env.GOOGLE_CALENDAR_API_KEY;
+const calendarId = resolveCalendarId(import.meta.env.GOOGLE_CALENDAR_ID);
 
-let events: PorkyEvent[] = [];
-let isSample = false;
+const res = await fetch(icsUrl(calendarId));
+if (!res.ok) {
+  throw new Error(
+    `Could not read the Google Calendar at build time: the ICS feed returned ` +
+      `${res.status}. Check that the calendar is still shared publicly ` +
+      `(Settings -> Access permissions -> "Make available to public").`,
+  );
+}
 
-if (calendarId && apiKey) {
-  try {
-    const res = await fetch(calendarUrl(calendarId, apiKey, windowFrom(now)));
-    if (res.ok) {
-      const body = (await res.json()) as { items?: unknown[] };
-      events = normalise((body.items ?? []) as never[]);
-    } else {
-      // Fail the build loudly rather than shipping an empty calendar that
-      // looks like "no events scheduled".
-      throw new Error(`Calendar API returned ${res.status}`);
-    }
-  } catch (err) {
-    throw new Error(
-      `Could not read the Google Calendar at build time: ${(err as Error).message}`,
-    );
-  }
-} else {
-  events = sampleEvents(now);
-  isSample = true;
+const feed = fromICS(await res.text(), now);
+const events: PorkyEvent[] = feed.events;
+
+// Not fatal — the first occurrence of such a rule still renders — but it must
+// not pass unnoticed, because the symptom is dates quietly missing from the
+// site rather than anything that looks like an error.
+for (const u of feed.unsupported) {
+  console.warn(
+    `[calendar] recurrence not fully expanded for "${u.uid}": ${u.reason} (${u.rule})`,
+  );
 }
 
 const upcoming = nextUp(events, now);
@@ -99,14 +98,13 @@ const jsonLd = events.slice(0, 20).map((e) => ({
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://porkysbackyardevents.com/" />
     <meta name="theme-color" content="#ff1e02" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    {!isSample && (
-      <script
-        type="application/ld+json"
-        is:inline
-        set:html={safeJson(jsonLd)}
-      />
-    )}
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script
+      type="application/ld+json"
+      is:inline
+      set:html={safeJson(jsonLd)}
+    />
   </head>
 
   <body>
@@ -114,7 +112,14 @@ const jsonLd = events.slice(0, 20).map((e) => ({
 
     <header class="topbar">
       <a class="brand" href={VENUE.mainSite}>
-        <span class="brand-mark" aria-hidden="true">P</span>
+        <img
+          class="brand-mark"
+          src="/logo.png"
+          alt=""
+          width="44"
+          height="44"
+          decoding="async"
+        />
         <span class="brand-name">Porky's Backyard</span>
       </a>
       <nav class="topnav" aria-label="Main site">
@@ -122,13 +127,6 @@ const jsonLd = events.slice(0, 20).map((e) => ({
         <a class="btn btn-red btn-sm" href={VENUE.mainSite}>Main site</a>
       </nav>
     </header>
-
-    {isSample && (
-      <p class="sample-notice" role="status">
-        <strong>Placeholder schedule.</strong> No Google Calendar is connected yet,
-        so these events are examples, not real bookings.
-      </p>
-    )}
 
     <!--
       The hero leads with the answer, not a headline. Someone opening this at

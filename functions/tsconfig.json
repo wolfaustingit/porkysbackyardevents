@@ -9,5 +9,7 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "../src/lib/**/*.ts"]
+  "//": "The lib/ sources are pulled in because the Function imports them. Tests are not: they run on Node, with Node globals this config deliberately excludes.",
+  "include": ["**/*.ts", "../src/lib/**/*.ts"],
+  "exclude": ["../src/lib/**/*.test.ts"]
 }

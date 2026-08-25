@@ -3,3 +3,6 @@ dist/
 .astro/
 .env
 .DS_Store
+
+# wrangler's local miniflare state, written by `wrangler pages dev`
+.wrangler/

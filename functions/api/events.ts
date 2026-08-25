@@ -1,33 +1,28 @@
 /*
  * GET /api/events — the live feed the page refreshes against.
  *
- * This exists so the Google API key never reaches a browser. A referrer-
- * restricted browser key would technically work, but referrer restrictions are
- * trivially spoofed and the key would sit in the HTML of a public site
- * forever. It stays a Cloudflare secret and only this function sees it.
+ * The upstream is Google's public ICS feed, which needs no credential at all.
+ * This function still exists rather than having the browser fetch Google
+ * directly, for two reasons: the ICS endpoint sends no CORS headers, so a
+ * browser fetch would fail outright; and proxying lets Cloudflare cache one
+ * copy at the edge instead of every visitor hitting Google.
  *
  * Deployed as a Cloudflare Pages Function: the `functions/` directory at the
  * repo root is picked up automatically alongside the static `dist` output.
  */
 
-import {
-  calendarUrl,
-  normalise,
-  windowFrom,
-  type PorkyEvent,
-} from "../../src/lib/events";
+import { resolveCalendarId } from "../../src/lib/config";
+import { fromICS, icsUrl, type PorkyEvent } from "../../src/lib/events";
 
 interface Env {
-  /** The `...@group.calendar.google.com` id of the public events calendar. */
-  GOOGLE_CALENDAR_ID: string;
-  /** A Google Cloud API key with the Calendar API enabled. Secret. */
-  GOOGLE_CALENDAR_API_KEY: string;
+  /** Optional override; falls back to the committed public calendar id. */
+  GOOGLE_CALENDAR_ID?: string;
 }
 
 /**
- * Five minutes. Long enough that a busy Saturday does not hammer Google's
- * quota, short enough that a same-day schedule fix reaches the sign-out front
- * before anyone notices it was wrong.
+ * Five minutes. Long enough that a busy Saturday does not hammer Google,
+ * short enough that a same-day schedule fix reaches the page before anyone
+ * notices it was wrong.
  */
 const EDGE_TTL = 300;
 
@@ -43,25 +38,13 @@ function json(body: unknown, status: number, extra: HeadersInit = {}): Response 
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
-  const { GOOGLE_CALENDAR_ID: id, GOOGLE_CALENDAR_API_KEY: key } = env;
-
-  if (!id || !key) {
-    // Misconfiguration is the likeliest failure here, and a silent empty list
-    // looks identical to "no events this month". Say which one it is.
-    return json(
-      { error: "calendar_not_configured", events: [] },
-      503,
-      { "cache-control": "no-store" },
-    );
-  }
-
-  const upstream = calendarUrl(id, key, windowFrom(new Date()));
+  const id = resolveCalendarId(env.GOOGLE_CALENDAR_ID);
 
   let res: Response;
   try {
-    res = await fetch(upstream, {
-      // Cloudflare's own cache in front of Google, independent of the
-      // response headers we hand our visitors.
+    res = await fetch(icsUrl(id), {
+      // Cloudflare's own cache in front of Google, independent of the headers
+      // we hand our visitors.
       cf: { cacheTtl: EDGE_TTL, cacheEverything: true },
     });
   } catch {
@@ -71,20 +54,25 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   }
 
   if (!res.ok) {
-    // Do not echo Google's body — it repeats the API key back in some error
-    // shapes, and this response is public.
-    return json(
-      { error: "upstream_error", status: res.status, events: [] },
-      502,
-      { "cache-control": "no-store" },
-    );
+    // A 404 here almost always means the calendar was switched back to
+    // private rather than that the id is wrong — it is the one failure worth
+    // being able to recognise later from logs alone.
+    return json({ error: "upstream_error", status: res.status, events: [] }, 502, {
+      "cache-control": "no-store",
+    });
   }
 
-  const payload = (await res.json()) as { items?: unknown[] };
-  const events: PorkyEvent[] = normalise((payload.items ?? []) as never[]);
+  const { events, unsupported } = fromICS(await res.text(), new Date());
+  const list: PorkyEvent[] = events;
 
   return json(
-    { events, fetchedAt: new Date().toISOString() },
+    {
+      events: list,
+      fetchedAt: new Date().toISOString(),
+      // Rules we could not fully expand. Not rendered, but present so a
+      // missing recurring night can be diagnosed without guessing.
+      ...(unsupported.length ? { unsupported } : {}),
+    },
     200,
     { "access-control-allow-origin": new URL(request.url).origin },
   );
