@@ -10,6 +10,7 @@
 
 import type { PorkyEvent } from "../lib/events";
 import {
+  eventDetailHTML,
   listHTML,
   monthBounds,
   monthFromKey,
@@ -143,6 +144,36 @@ function initMonthNav(): void {
   });
 }
 
+/**
+ * A chip in the grid only has room for a clipped title, so clicking one opens
+ * the whole event in a dialog. Delegated for the same reason as the arrows.
+ */
+function initEventDetail(): void {
+  const panel = el("panel-month");
+  const dialog = el<HTMLDialogElement>("event-detail");
+  const body = el("event-detail-body");
+  if (!panel || !dialog || !body || typeof dialog.showModal !== "function") {
+    return;
+  }
+
+  panel.addEventListener("click", (ev) => {
+    const chip = (ev.target as HTMLElement).closest<HTMLElement>(
+      "[data-event-id]",
+    );
+    if (!chip) return;
+    const e = state.events.find((x) => x.id === chip.dataset.eventId);
+    if (!e) return;
+
+    body.innerHTML = eventDetailHTML(e, new Date());
+    dialog.showModal();
+  });
+
+  // A click on the backdrop lands on the <dialog> itself, not its contents.
+  dialog.addEventListener("click", (ev) => {
+    if (ev.target === dialog) dialog.close();
+  });
+}
+
 function note(message: string): void {
   const f = el("freshness");
   if (f) f.textContent = message;
@@ -204,6 +235,7 @@ export function initLive(): void {
   seed();
   initTabs();
   initMonthNav();
+  initEventDetail();
 
   void refresh();
   setInterval(() => void refresh(), REFRESH_MS);

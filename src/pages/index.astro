@@ -176,6 +176,19 @@ const jsonLd = events.slice(0, 20).map((e) => ({
         set:html={monthMarkup}
       />
 
+      <!--
+        Opened by a month-grid chip. Its content is rendered by
+        eventDetailHTML() in src/lib/render.ts, which escapes every field.
+      -->
+      <dialog class="detail" id="event-detail" aria-labelledby="event-detail-title">
+        <form method="dialog" class="detail-close-form">
+          <button class="detail-close" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </form>
+        <div class="detail-body" id="event-detail-body"></div>
+      </dialog>
+
       <p class="freshness" id="freshness" aria-live="polite"></p>
 
       <!--

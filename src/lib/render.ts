@@ -152,6 +152,46 @@ export function listHTML(events: PorkyEvent[], now: Date): string {
   return `<ul class="rows">${events.map((e) => rowHTML(e, now)).join("")}</ul>`;
 }
 
+/* ---------------------------------------------------------- event detail */
+
+/**
+ * "6:00 PM – 9:00 PM". A night that runs past midnight still reads as one
+ * evening; the end only gets its own date when the event lasts over a day.
+ */
+function timeRangeLabel(e: PorkyEvent): string {
+  if (e.allDay) return "All day";
+  const start = toDate(e.start);
+  if (!e.end) return F.time.format(start);
+  const end = toDate(e.end);
+  if (end.getTime() <= start.getTime()) return F.time.format(start);
+  const endLabel =
+    end.getTime() - start.getTime() < 86400_000
+      ? F.time.format(end)
+      : `${F.full.format(end)}, ${F.time.format(end)}`;
+  return `${F.time.format(start)} – ${endLabel}`;
+}
+
+/**
+ * The whole event, for the dialog a month-grid chip opens. The chip itself
+ * only has room for a truncated title, so this is where the rest of it lives.
+ */
+export function eventDetailHTML(e: PorkyEvent, now: Date): string {
+  const start = toDate(e.start);
+  const href = safeHref(e.link);
+  const today = dayKey(start) === dayKey(now);
+
+  return `
+    <p class="detail-when">${esc(F.full.format(start))}${
+      today ? `<span class="chip-today">Today</span>` : ""
+    }</p>
+    <p class="detail-time">${esc(timeRangeLabel(e))}</p>
+    <h2 class="detail-title" id="event-detail-title">${esc(e.title)}</h2>
+    ${e.description ? `<p class="detail-desc">${esc(e.description)}</p>` : ""}
+    ${e.location ? `<p class="detail-loc">${esc(e.location)}</p>` : ""}
+    ${href ? `<a class="btn btn-red" href="${esc(href)}">Get details</a>` : ""}
+  `;
+}
+
 /* ------------------------------------------------------------ month grid */
 
 /** Sunday-first weeks, because that is how a US wall calendar reads. */
@@ -217,7 +257,7 @@ export function monthHTML(
     const chips = dayEvents
       .map(
         (e) =>
-          `<span class="chip" title="${esc(e.title)} · ${esc(timeLabel(e))}">${esc(e.title)}</span>`,
+          `<button type="button" class="chip" data-event-id="${esc(e.id)}" aria-haspopup="dialog">${esc(e.title)}<span class="vh">, ${esc(timeLabel(e))}</span></button>`,
       )
       .join("");
 
@@ -239,7 +279,9 @@ export function monthHTML(
 
   const key = monthKey(first);
   const { min, max } = monthBounds(now);
-  const label = F.monthYear.format(first);
+  // Mid-month, not the 1st: midnight on the 1st in any zone east of Humble is
+  // still the previous month in venue time, and the heading would say so.
+  const label = F.monthYear.format(new Date(y, m, 15));
 
   return `
     <div class="month-nav">
