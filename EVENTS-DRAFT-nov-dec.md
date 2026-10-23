@@ -7,7 +7,10 @@ plus the three weekly nights extended from the October entries already on the pu
 calendar. Target: `PUBLIC - Porky's Events`, which is the feed
 `src/lib/config.ts` points the website at.
 
-**58 events to add. 2 deliberately left off. 8 already there.**
+**55 events to add. 2 private rentals left off. 8 already there.**
+
+Revision 2, after owner review: the Friday DJ Chris Coke sets are gone (he does not play
+line dancing nights) and Latin Night is off Christmas Day.
 
 All times America/Chicago, CST (-06:00) — the Nov 1 DST change falls before the first
 event on this list.
@@ -63,19 +66,22 @@ Dollens' "$500 / check made to Michael Dollens" dropped. Dec 3 is all-day intern
 7–11 pm copied from the other two Thursdays and the Oct 29 public entry. **See flag F2
 for the five empty Thursdays.**
 
-## 6. Fridays — 9 events
+## 6. Fridays — 6 events
 
 | Date | Title | Time |
 |---|---|---|
 | Fri Nov 6 | Line Dancing Night with Mizz CeCe & DJ TNT | 6:00 pm – 10:00 pm |
-| Fri Nov 6 | DJ Chris Coke | 6:00 pm – 1:00 am  ⚠ **F1** |
 | Fri Nov 13 | Latin Night with JJ Villafane Band and DJ Chris Coke | 6:00 pm – 1:00 am |
+| Fri Nov 20 | *nothing booked* | ⚠ **N1** |
 | Fri Nov 27 | Latin Night with JJ Villafane Band and DJ Chris Coke | 6:00 pm – 1:00 am |
 | Fri Dec 4 | Line Dancing Night with Mizz CeCe & DJ TNT | 6:00 pm – 10:00 pm |
-| Fri Dec 4 | DJ Chris Coke | 6:00 pm – 1:00 am  ⚠ **F1** |
 | Fri Dec 11 | Latin Night with DJ Chris Coke | 6:00 pm – 1:00 am |
-| Fri Dec 18 | Line Dancing Night | 6:00 pm – 10:00 pm  ⚠ **F3** |
-| Fri Dec 25 | Latin Night with DJ Chris Coke | 6:00 pm – 1:00 am  ⚠ **F4** |
+| Fri Dec 18 | Line Dancing Night | 6:00 pm – 10:00 pm ⚠ **F3** |
+| Fri Dec 25 | *dropped — Christmas Day* | |
+
+The two standalone `DJ Chris Coke` sets that sat on Nov 6 and Dec 4 in revision 1 are
+removed: those are line dancing nights and he does not play them. He stays on the Latin
+Nights, which are a different booking.
 
 Performer pay ($350 each to Cecily Jones and Tanganika Bryant), "check payable to
 Christopher Jackson", and the promo/stage-cleaning to-dos are all dropped.
@@ -115,15 +121,34 @@ Dec 13, Dec 20, Dec 24. They overlap Football Sundays, same as they did in Octob
 
 ---
 
+## Settled in review
+
+**F1 — Friday DJ Chris Coke times.** Moot. Rather than choosing between 6 pm–1 am and
+10 pm–2 am, the owner removed both entries: Chris Coke does not play line dancing nights.
+The boilerplate description that caused the confusion is still pasted across every Chris
+Coke entry on the operations calendar, so the same ambiguity will recur next month.
+
+**F4 — Latin Night on Christmas Day.** Dropped. The internal recurring rule
+(`4dd0nq81rrs5dljmo00a6hus6e`) will keep generating it, so it will need dropping again
+unless the rule is given an exception.
+
 ## Flags
 
-**F1 — the Friday DJ Chris Coke times are probably wrong as drafted.**
-You asked for the internal description's "6 pm–1 am" over the entry's own 10 pm–2 am.
-Drafted that way, but I think the entry is right and the description is boilerplate: it
-is the same text pasted onto the Latin Night Fridays, where 6 pm–1 am *is* the entry
-time. On Nov 6 and Dec 4 it leaves the DJ set overlapping Line Dancing Night for four
-hours, where 10 pm–2 am reads as the DJ taking over when line dancing ends at 10. Worth
-flipping these two before I publish.
+**N1 — Nov 20 is empty, and the Friday pattern says it should not be.**
+New, and it came out of the Chris Coke instruction: the request named the *1st and 3rd*
+Fridays of November, but the operations calendar has nothing at all on Nov 20. Across
+November and December the Fridays otherwise alternate cleanly —
+
+| | 1st Fri | 2nd Fri | 3rd Fri | 4th Fri |
+|---|---|---|---|---|
+| Nov | 6 Line Dancing | 13 Latin Night | **20 — empty** | 27 Latin Night |
+| Dec | 4 Line Dancing | 11 Latin Night | 18 Line Dancing | 25 *(was Latin Night)* |
+
+Dec 18 is the 3rd Friday and it *is* a line dancing night — it just sits on the calendar
+as a one-off rather than coming from the monthly rule. So the pattern looks like line
+dancing on the 1st and 3rd Fridays and Latin Night on the 2nd and 4th, which would make
+Nov 20 a missing Line Dancing Night rather than a genuinely dark night. Confirm and I
+will add it (6–10 pm, matching the others).
 
 **F2 — five Thursdays have no act booked.** Nov 19, Nov 26 (Thanksgiving), Dec 10,
 Dec 17, Dec 24 (Christmas Eve), Dec 31 (New Year's Eve). Live Music Thursday ran weekly
@@ -132,24 +157,20 @@ acts; if they are dark, nothing to do.
 
 **F3 — Dec 18 Line Dancing Night times are inferred.** All-day internally, with no host
 named. 6–10 pm copied from the Nov 6 / Dec 4 line dancing nights. Confirm, or give me
-the real times.
-
-**F4 — Latin Night lands on Christmas Day.** Dec 25 comes out of the internal recurring
-rule. If you are closed, I drop it.
+the real times. If N1 is right, this is the 3rd-Friday slot and Mizz CeCe & DJ TNT are
+presumably hosting, in which case the title should match theirs.
 
 **F5 — two all-day events with no times.** Día de los Muertos and Santa's Workshop will
 render as all-day on the site, which is honest but weak in the "next event" card on the
 hero. Times would be better if you have them.
 
-**F6 — holiday hours generally.** Thanksgiving (Thu Nov 26), Christmas Eve, Christmas
-Day and New Year's Eve all carry weekly nights in this draft or sit empty. Nothing on
-either calendar says whether the park is open. Worth a pass before December.
-
----
+**F6 — holiday hours generally.** Thanksgiving (Thu Nov 26), Christmas Eve and New
+Year's Eve all sit empty in this draft, and Christmas Day is now deliberately clear.
+Nothing on either calendar says whether the park is open. Worth a pass before December.
 
 ## What happens after you approve
 
-I add these 58 events to `PUBLIC - Porky's Events`. The site picks them up on its next
+I add these 55 events to `PUBLIC - Porky's Events`. The site picks them up on its next
 Cloudflare Pages build — no code change, no commit: `src/lib/events.ts` reads the live
 ICS feed, so the page is whatever the calendar says at build time. The 120-day
 `WINDOW_DAYS` window reaches into February, and the month grid pages three months
